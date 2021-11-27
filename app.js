@@ -32,7 +32,6 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-const test ="";
 
 mongoConnect(client => {
   console.log(client);
