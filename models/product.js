@@ -18,8 +18,15 @@ const productSchema = new Schema({
     imageUrl: {
         type: String,
         required: true
+    },
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     }
 })
+
+module.exports = mongoose.model('Product', productSchema)
 
 // const mongodb = require('mongodb');
 // const getDb = require('../util/database').getDb;

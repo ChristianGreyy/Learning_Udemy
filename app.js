@@ -21,9 +21,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
 
-  User.findById('61a375206f20c38146ed7bdb')
+  User.findById('61ace27aefabf034b57d465f')
     .then(user => {
-      req.user = new User(user.name, user.email, user.cart, user._id);
+      req.user = user;
       next();
     })
     .catch(err => console.log(err));
@@ -35,8 +35,21 @@ app.use(shopRoutes);
 app.use(errorController.get404);
 
 
-mongoose.connect('mongodb+srv://ChristianGrey:hungtruong2k2@cluster0.2oakb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+mongoose.connect('mongodb+srv://ChristianGrey:hungtruong2k2@cluster0.2oakb.mongodb.net/Shop?retryWrites=true&w=majority')
 .then(result => {
+  User.findOne()
+  .then(user => {
+    if(!user) {
+      const user = new User({
+        name: 'ChristianGrey',
+        email: 'truongthanhhung2k2@gmail.com',
+        cart: {
+          items: []
+        }
+      })
+      user.save();
+    }
+  })
   app.listen(3000);
 })
 .catch(err => {
