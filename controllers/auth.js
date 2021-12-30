@@ -1,8 +1,19 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
+const passwordEmail = require('../private').passwordEmail;
 
 const User = require('../models/user');
 
+let transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: 'christiangrey2k2@gmail.com', // generated ethereal user
+    pass: passwordEmail, // generated ethereal password
+  },
+});
 
 exports.getLogin = (req, res, next) => {
   let message = req.flash('error');
@@ -90,6 +101,23 @@ exports.postSignup = (req, res, next) => {
     })
     .then(result => {
       res.redirect('/login');
+      return transporter.sendMail({
+        from: 'christiangrey2k2@gmail.com', // sender address
+        to: "truongthanhhung2k2@gmail.com", // list of receivers
+        subject: "Hello ✔", // Subject line
+        text: "Hello world?", // plain text body
+        html: "<b>Hello world?</b>", // html body
+      }, (error, info) => {
+        if(error) {
+          console.log(error);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+      })
+    })
+    .catch(err => {
+      console.log('error')
+      console.log(err);
     })
   })
   .catch(err => {
