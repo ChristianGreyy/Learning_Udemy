@@ -49,6 +49,18 @@ exports.getSignup = (req, res, next) => {
 exports.postLogin = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
+
+  const errors = validationResult(req);
+
+  if(!errors.isEmpty()) {
+    console.log(errors.array())
+    return res.status(422).render('auth/login', {
+      path: '/login',
+      pageTitle: 'login',
+      errorMessage: errors.array()[0].msg,
+    });
+  }
+
   User.findOne({email: email})
     .then(user => {
       if(!user) {
@@ -81,7 +93,6 @@ exports.postLogin = (req, res, next) => {
 exports.postSignup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-  const confirmPassword = req.body.confirmPassword;
   const errors = validationResult(req);
 
   if(!errors.isEmpty()) {
@@ -94,36 +105,29 @@ exports.postSignup = (req, res, next) => {
     });
   }
 
-  User.findOne({email: email})
-  .then(userDoc => {
-    if(userDoc) {
-      req.flash('error', 'E-mail exists already, please pick a diffirent one.');
-      return res.redirect('/signup');
-    }
-    return bcrypt.hash(password, 12)
-    .then(hashedPassword => {
-      const user = new User({
-        email: email,
-        password: hashedPassword,
-        cart: { items: [] }
-      })
-      return user.save();
+  bcrypt.hash(password, 12)
+  .then(hashedPassword => {
+    const user = new User({
+      email: email,
+      password: hashedPassword,
+      cart: { items: [] }
     })
-    .then(result => {
-      res.redirect('/login');
-      return transporter.sendMail({
-        from: 'christiangrey2k2@gmail.com', // sender address
-        to: "truongthanhhung2k2@gmail.com", // list of receivers
-        subject: "Account ✔", // Subject line
-        text: "Hello world?", // plain text body
-        html: "<b>You signed up successfully</b>", // html body
-      }, (error, info) => {
-        if(error) {
-          console.log(error);
-        } else {
-          console.log('Email sent: ' + info.response);
-        }
-      })
+    return user.save();
+  })
+  .then(result => {
+    res.redirect('/login');
+    return transporter.sendMail({
+      from: 'christiangrey2k2@gmail.com', // sender address
+      to: "truongthanhhung2k2@gmail.com", // list of receivers
+      subject: "Account ✔", // Subject line
+      text: "Hello world?", // plain text body
+      html: "<b>You signed up successfully</b>", // html body
+    }, (error, info) => {
+      if(error) {
+        console.log(error);
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
     })
     .catch(err => {
       console.log('error')
