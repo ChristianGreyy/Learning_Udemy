@@ -41,6 +41,12 @@ app.use(session({
 app.use(csrfProtection);
 app.use(flash());
 
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
+})
+
 
 app.use((req, res, next) => {
   if(!req.session.user) {
@@ -48,6 +54,7 @@ app.use((req, res, next) => {
   }
   User.findById(req.session.user._id)
     .then(user => {
+      throw new Error('ChristianGrey')
       if(!user) {
         return next();
       }
@@ -55,14 +62,8 @@ app.use((req, res, next) => {
       next();
     })
     .catch(err => {
-      throw new Error(err);
+      return next(new Error(err));
     });
-})
-
-app.use((req, res, next) => {
-  res.locals.isAuthenticated = req.session.isLoggedIn;
-  res.locals.csrfToken = req.csrfToken();
-  next();
 })
 
 app.use('/admin', adminRoutes);
@@ -74,7 +75,11 @@ app.get('/500', errorController.get500)
 app.use(errorController.get404);
 
 app.use((error, req, res, next) => {
-  res.redirect('/500');
+  res.status(500).render('500', {
+    pageTitle: 'Error!',
+    path: '/500',
+    isAuthenticated: req.isLoggedIn
+  });
 })
 
 mongoose
