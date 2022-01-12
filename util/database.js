@@ -26,3 +26,5 @@ const getDb = () => {
   
   exports.mongoConnect = mongoConnect;
   exports.getDb = getDb;
+
+  // Don't need to use it
