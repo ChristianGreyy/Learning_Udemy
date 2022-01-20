@@ -5,20 +5,39 @@ const path = require('path');
 
 const PDFDocument = require('pdfkit');
 
+const ITEMS_PER_PAGE = 1;
+
 exports.getProducts = (req, res, next) => {
-  Product.find()
-    .then(products => {
-      res.render('shop/product-list', {
-        prods: products,
-        pageTitle: 'All Products',
-        path: '/products',
-      });
-    })
-    .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+  const page = +req.query.page || 1;
+  let totalItems;
+  Product
+  .find()
+  .count()
+  .then(numProducts => {
+    totalItems = numProducts;
+    return Product.find()   
+    .skip((page - 1) * ITEMS_PER_PAGE)
+    .limit(ITEMS_PER_PAGE)  
+  })
+  .then(products => {
+    res.render('shop/product-list', {
+      prods: products,
+      pageTitle: 'Products',
+      path: '/products',  
+      currentPage: page,
+      hasNextPage: ITEMS_PER_PAGE * page < totalItems,
+      hasPreviousPage: page > 1,
+      nextPage: page + 1,
+      previousPage: page - 1,
+      lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE)
+      // csrfToken: req.csrfToken()
     });
+  })
+  .catch(err => {
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
+  });
 };
 
 exports.getProduct = (req, res, next) => {
@@ -39,21 +58,38 @@ exports.getProduct = (req, res, next) => {
 };
 
 exports.getIndex = (req, res, next) => {
-  Product.find()
-    .then(products => {
-      console.log(req.csrfToken())
-      res.render('shop/index', {
-        prods: products,
-        pageTitle: 'Shop',
-        path: '/',
-        csrfToken: req.csrfToken()
-      });
-    })
-    .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+  const page = +req.query.page || 1;
+  let totalItems;
+
+  Product
+  .find()
+  .count()
+  .then(numProducts => {
+    totalItems = numProducts;
+    return Product.find()   
+    .skip((page - 1) * ITEMS_PER_PAGE)
+    .limit(ITEMS_PER_PAGE)  
+  })
+  .then(products => {
+    res.render('shop/index', {
+      prods: products,
+      pageTitle: 'Shop',
+      path: '/',  
+      currentPage: page,
+      hasNextPage: ITEMS_PER_PAGE * page < totalItems,
+      hasPreviousPage: page > 1,
+      nextPage: page + 1,
+      previousPage: page - 1,
+      lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE)
+      // csrfToken: req.csrfToken()
     });
+  })
+  .catch(err => {
+    console.log(err)
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
+  });
 };
 
 exports.getCart = (req, res, next) => {
@@ -170,7 +206,17 @@ exports.getInvoice = (req, res, next) => {
     pdfDoc.pipe(fs.createWriteStream(invoicePath));
     pdfDoc.pipe(res);
     
-    pdfDoc.text('hello world!!');
+    pdfDoc.fontSize(26).text('Invoice', {
+      underline: true,
+    });
+    pdfDoc.text('--------------------------');
+    let totalPrice = 0;
+    order.products.forEach(prod => {
+      totalPrice += prod.product.price * prod.quantity;
+      pdfDoc.fontSize(16).text(prod.product.title + ' - ' + prod.quantity + ' x ' + '$' + prod.product.price);
+    })
+    pdfDoc.text('---');
+    pdfDoc.fontSize(20).text('Total price: $' + totalPrice);
 
     pdfDoc.end();
 
@@ -186,7 +232,6 @@ exports.getInvoice = (req, res, next) => {
     //   res.send(data);
     // })
     // const file = fs.createReadStream(invoicePath);
-   
 
     // file.pipe(res);
 
